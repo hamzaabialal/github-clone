@@ -2,6 +2,18 @@
 
 A modern, responsive GitHub clone built with Next.js 15, TypeScript, and TailwindCSS. This application allows users to search for GitHub users and view detailed profiles with repositories, similar to the original GitHub experience.
 
+## 📸 Screenshots
+
+![Home Search](public/Screenshot%20from%202025-09-04%2019-00-13.png)
+
+![Advanced Filters](public/Screenshot%20from%202025-09-04%2019-00-26.png)
+
+![Search Results](public/Screenshot%20from%202025-09-04%2019-00-36.png)
+
+![User Profile](public/Screenshot%20from%202025-09-04%2019-00-42.png)
+
+![Repositories List](public/Screenshot%20from%202025-09-04%2019-00-49.png)
+
 ## ✨ Features
 
 ### 🔍 User Search
