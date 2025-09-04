@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback, Suspense } from "react"
 import { Search, Users, Star, GitBranch } from "lucide-react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
@@ -18,23 +18,14 @@ interface SearchResult {
   items: User[]
 }
 
-export default function Home() {
+function HomeContent() {
   const searchParams = useSearchParams()
   const [query, setQuery] = useState("")
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(false)
   const [searched, setSearched] = useState(false)
 
-  // Check for search query in URL on component mount
-  useEffect(() => {
-    const searchQuery = searchParams.get('search')
-    if (searchQuery) {
-      setQuery(searchQuery)
-      searchUsers(searchQuery)
-    }
-  }, [searchParams])
-
-  const searchUsers = async (searchQuery?: string) => {
+  const searchUsers = useCallback(async (searchQuery?: string) => {
     const queryToSearch = searchQuery || query
     if (!queryToSearch.trim()) return
     
@@ -50,7 +41,16 @@ export default function Home() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [query])
+
+  // Check for search query in URL on component mount
+  useEffect(() => {
+    const searchQuery = searchParams.get('search')
+    if (searchQuery) {
+      setQuery(searchQuery)
+      searchUsers(searchQuery)
+    }
+  }, [searchParams, searchUsers])
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
@@ -106,7 +106,7 @@ export default function Home() {
           {users.length === 0 && !loading && (
             <div className="text-center py-16">
               <Users className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-              <p className="text-xl text-gray-400">No users found for "{query}"</p>
+              <p className="text-xl text-gray-400">No users found for &quot;{query}&quot;</p>
               <p className="text-gray-500">Try a different search term</p>
             </div>
           )}
@@ -173,5 +173,13 @@ export default function Home() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gray-950 text-gray-100 flex items-center justify-center">Loading...</div>}>
+      <HomeContent />
+    </Suspense>
   )
 }

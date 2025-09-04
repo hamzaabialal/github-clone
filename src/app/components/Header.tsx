@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 
 export default function Header() {
   const [query, setQuery] = useState("")
@@ -20,9 +21,9 @@ export default function Header() {
         
         {/* Logo */}
         <div className="flex items-center gap-2">
-          <a href="/" className="text-2xl font-bold hover:text-blue-400 transition-colors">
+          <Link href="/" className="text-2xl font-bold hover:text-blue-400 transition-colors">
             🐙 GitHubClone
-          </a>
+          </Link>
         </div>
 
         {/* Search */}
@@ -38,9 +39,9 @@ export default function Header() {
 
         {/* Nav */}
         <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
-          <a href="/" className="hover:text-blue-400 transition-colors">Home</a>
-          <a href="/" className="hover:text-blue-400 transition-colors">Explore</a>
-          <a href="/" className="hover:text-blue-400 transition-colors">About</a>
+          <Link href="/" className="hover:text-blue-400 transition-colors">Home</Link>
+          <Link href="/" className="hover:text-blue-400 transition-colors">Explore</Link>
+          <Link href="/" className="hover:text-blue-400 transition-colors">About</Link>
         </nav>
 
         {/* Profile (dummy) */}
