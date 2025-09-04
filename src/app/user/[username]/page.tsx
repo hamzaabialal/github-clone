@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useMemo, useState, useEffect } from "react"
 import { useParams } from "next/navigation"
 import { 
   MapPin, 
@@ -59,6 +59,7 @@ export default function UserProfile() {
   const [repos, setRepos] = useState<Repository[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [languageFilter, setLanguageFilter] = useState<string>("All")
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -90,6 +91,19 @@ export default function UserProfile() {
       fetchUserData()
     }
   }, [username])
+
+  const languages = useMemo(() => {
+    const set = new Set<string>()
+    repos.forEach((r) => {
+      if (r.language) set.add(r.language)
+    })
+    return ["All", ...Array.from(set).sort((a, b) => a.localeCompare(b))]
+  }, [repos])
+
+  const visibleRepos = useMemo(() => {
+    if (languageFilter === "All") return repos
+    return repos.filter((r) => r.language === languageFilter)
+  }, [repos, languageFilter])
 
   if (loading) {
     return (
@@ -131,7 +145,7 @@ export default function UserProfile() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 text-gray-100">
+    <div className="min-h-screen bg-app text-app">
       {/* Back Button */}
       <div className="max-w-7xl mx-auto px-4 py-6">
         <Link 
@@ -144,14 +158,14 @@ export default function UserProfile() {
 
       {/* Profile Header */}
       <div className="max-w-7xl mx-auto px-4 pb-8">
-        <div className="bg-gray-800 border border-gray-700 rounded-lg p-8">
+        <div className="bg-surface border border-app rounded-lg p-8">
           <div className="flex flex-col lg:flex-row gap-8">
             {/* Avatar and Basic Info */}
             <div className="flex-shrink-0">
               <img
                 src={profile.avatar_url}
                 alt={`${profile.login} avatar`}
-                className="w-32 h-32 rounded-full border-4 border-gray-600"
+                className="w-32 h-32 rounded-full border-4 border-app"
               />
             </div>
 
@@ -165,7 +179,7 @@ export default function UserProfile() {
               </div>
 
               {profile.bio && (
-                <p className="text-lg text-gray-300 mb-4">{profile.bio}</p>
+                <p className="text-lg text-muted mb-4">{profile.bio}</p>
               )}
 
               {/* Stats */}
@@ -195,44 +209,44 @@ export default function UserProfile() {
               {/* Additional Info */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 {profile.location && (
-                  <div className="flex items-center gap-2 text-gray-300">
+                  <div className="flex items-center gap-2 text-muted">
                     <MapPin className="w-4 h-4" />
                     <span>{profile.location}</span>
                   </div>
                 )}
                 {profile.company && (
-                  <div className="flex items-center gap-2 text-gray-300">
+                  <div className="flex items-center gap-2 text-muted">
                     <Building className="w-4 h-4" />
                     <span>{profile.company}</span>
                   </div>
                 )}
                 {profile.blog && (
-                  <div className="flex items-center gap-2 text-gray-300">
+                  <div className="flex items-center gap-2 text-muted">
                     <Globe className="w-4 h-4" />
                     <a 
                       href={profile.blog.startsWith('http') ? profile.blog : `https://${profile.blog}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-blue-400 hover:text-blue-300"
+                      className="hover:opacity-80"
                     >
                       {profile.blog}
                     </a>
                   </div>
                 )}
                 {profile.twitter_username && (
-                  <div className="flex items-center gap-2 text-gray-300">
+                  <div className="flex items-center gap-2 text-muted">
                     <Twitter className="w-4 h-4" />
                     <a 
                       href={`https://twitter.com/${profile.twitter_username}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-blue-400 hover:text-blue-300"
+                      className="hover:opacity-80"
                     >
                       @{profile.twitter_username}
                     </a>
                   </div>
                 )}
-                <div className="flex items-center gap-2 text-gray-300">
+                <div className="flex items-center gap-2 text-muted">
                   <Calendar className="w-4 h-4" />
                   <span>Joined {formatDate(profile.created_at)}</span>
                 </div>
@@ -244,7 +258,7 @@ export default function UserProfile() {
                   href={profile.html_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-md transition-colors"
+                  className="inline-flex items-center gap-2 btn-primary text-white px-4 py-2 rounded-md transition-colors"
                 >
                   <Github className="w-4 h-4" />
                   View on GitHub
@@ -257,9 +271,23 @@ export default function UserProfile() {
 
       {/* Repositories Section */}
       <div className="max-w-7xl mx-auto px-4 pb-16">
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold mb-2">Repositories</h2>
-          <p className="text-gray-400">Latest {repos.length} repositories</p>
+        <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+          <div>
+            <h2 className="text-2xl font-bold mb-2">Repositories</h2>
+            <p className="text-muted">Showing {visibleRepos.length} of {repos.length}</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-gray-400">Language</label>
+            <select
+              value={languageFilter}
+              onChange={(e) => setLanguageFilter(e.target.value)}
+              className="px-3 py-2 bg-surface-muted border border-app rounded-md"
+            >
+              {languages.map((lang) => (
+                <option key={lang} value={lang}>{lang}</option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {repos.length === 0 ? (
@@ -269,10 +297,10 @@ export default function UserProfile() {
           </div>
         ) : (
           <div className="grid gap-4">
-            {repos.map((repo) => (
+            {visibleRepos.map((repo) => (
               <div
                 key={repo.id}
-                className="bg-gray-800 border border-gray-700 rounded-lg p-6 hover:border-gray-600 transition-colors"
+                className="bg-surface border border-app rounded-lg p-6 hover:opacity-90 transition-colors"
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
@@ -282,12 +310,12 @@ export default function UserProfile() {
                       </a>
                     </h3>
                     {repo.description && (
-                      <p className="text-gray-300 text-sm mb-3">{repo.description}</p>
+                      <p className="text-muted text-sm mb-3">{repo.description}</p>
                     )}
                     <div className="flex items-center gap-4 text-xs text-gray-400">
                       {repo.language && (
                         <span className="flex items-center gap-1">
-                          <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: "var(--primary)" }}></div>
                           {repo.language}
                         </span>
                       )}

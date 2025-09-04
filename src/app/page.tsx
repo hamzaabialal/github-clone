@@ -18,12 +18,19 @@ interface SearchResult {
   items: User[]
 }
 
+interface AdvancedFilters {
+  type: "Users" | "Organizations" | "All"
+  location: string
+  minFollowers: string
+}
+
 function HomeContent() {
   const searchParams = useSearchParams()
   const [query, setQuery] = useState("")
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(false)
   const [searched, setSearched] = useState(false)
+  const [filters, setFilters] = useState<AdvancedFilters>({ type: "All", location: "", minFollowers: "" })
 
   const searchUsers = useCallback(async (searchQuery?: string) => {
     const queryToSearch = searchQuery || query
@@ -31,7 +38,12 @@ function HomeContent() {
     
     setLoading(true)
     try {
-      const response = await fetch(`https://api.github.com/search/users?q=${encodeURIComponent(queryToSearch)}&per_page=20`)
+      const q: string[] = [encodeURIComponent(queryToSearch)]
+      if (filters.type === "Users") q.push("type:user")
+      if (filters.type === "Organizations") q.push("type:org")
+      if (filters.location.trim()) q.push(`location:${encodeURIComponent(filters.location.trim())}`)
+      if (filters.minFollowers.trim()) q.push(`followers:>=${encodeURIComponent(filters.minFollowers.trim())}`)
+      const response = await fetch(`https://api.github.com/search/users?q=${q.join("+")}&per_page=20`)
       const data: SearchResult = await response.json()
       setUsers(data.items || [])
       setSearched(true)
@@ -41,7 +53,7 @@ function HomeContent() {
     } finally {
       setLoading(false)
     }
-  }, [query])
+  }, [query, filters])
 
   // Check for search query in URL on component mount
   useEffect(() => {
@@ -59,7 +71,7 @@ function HomeContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 text-gray-100">
+    <div className="min-h-screen bg-app text-app">
       {/* Hero Section */}
       <div className="text-center py-16 px-4">
         <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
@@ -78,15 +90,50 @@ function HomeContent() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyPress={handleKeyPress}
-              className="w-full px-6 py-4 text-lg bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-6 py-4 text-lg bg-surface-muted border border-app rounded-lg focus:outline-none ring-primary focus:border-transparent"
             />
             <button
               onClick={() => searchUsers()}
               disabled={loading}
-              className="absolute right-2 top-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white px-6 py-2 rounded-md transition-colors"
+              className="absolute right-2 top-2 btn-primary disabled:opacity-60 text-white px-6 py-2 rounded-md transition-colors"
             >
               {loading ? "Searching..." : "Search"}
             </button>
+          </div>
+        </div>
+        {/* Advanced Filters */}
+        <div className="max-w-3xl mx-auto mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-sm text-gray-400 mb-1">Type</label>
+            <select
+              value={filters.type}
+              onChange={(e) => setFilters((f) => ({ ...f, type: e.target.value as AdvancedFilters["type"] }))}
+              className="w-full px-3 py-2 bg-surface-muted border border-app rounded-md"
+            >
+              <option>All</option>
+              <option>Users</option>
+              <option>Organizations</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm text-gray-400 mb-1">Location</label>
+            <input
+              value={filters.location}
+              onChange={(e) => setFilters((f) => ({ ...f, location: e.target.value }))}
+              placeholder="e.g. San Francisco"
+              className="w-full px-3 py-2 bg-surface-muted border border-app rounded-md"
+            />
+          </div>
+          <div>
+            <label className="block text-sm text-gray-400 mb-1">Min Followers</label>
+            <input
+              type="number"
+              min={0}
+              value={filters.minFollowers}
+              onChange={(e) => setFilters((f) => ({ ...f, minFollowers: e.target.value }))}
+              placeholder="e.g. 100"
+              className="w-full px-3 py-2 bg-surface-muted border border-app rounded-md"
+            />
           </div>
         </div>
       </div>
@@ -99,7 +146,7 @@ function HomeContent() {
               {loading ? "Searching..." : `Found ${users.length} users`}
             </h2>
             {users.length > 0 && (
-              <p className="text-gray-400">Click on any user to view their detailed profile</p>
+              <p className="text-muted">Click on any user to view their detailed profile</p>
             )}
           </div>
 
@@ -116,19 +163,19 @@ function HomeContent() {
               <Link
                 key={user.id}
                 href={`/user/${user.login}`}
-                className="block bg-gray-800 border border-gray-700 rounded-lg p-6 hover:border-blue-500 hover:bg-gray-750 transition-all duration-200"
+                className="block bg-surface border border-app rounded-lg p-6 hover:opacity-90 transition-all duration-200"
               >
                 <div className="flex items-center space-x-4">
                   <img
                     src={user.avatar_url}
                     alt={`${user.login} avatar`}
-                    className="w-16 h-16 rounded-full border-2 border-gray-600"
+                    className="w-16 h-16 rounded-full border-2 border-app"
                   />
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-blue-400 hover:text-blue-300">
+                    <h3 className="text-lg font-semibold hover:opacity-80">
                       {user.login}
                     </h3>
-                    <p className="text-sm text-gray-400 capitalize">
+                    <p className="text-sm text-muted capitalize">
                       {user.type}
                     </p>
                     <div className="flex items-center mt-2 text-xs text-gray-500">
@@ -149,25 +196,25 @@ function HomeContent() {
           <h2 className="text-3xl font-bold text-center mb-12">What you can do</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="text-center">
-              <div className="bg-blue-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="bg-surface-muted w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 border border-app">
                 <Search className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-xl font-semibold mb-2">Search Users</h3>
-              <p className="text-gray-400">Find developers by username, location, or skills</p>
+              <p className="text-muted">Find developers by username, location, or skills</p>
             </div>
             <div className="text-center">
-              <div className="bg-green-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="bg-surface-muted w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 border border-app">
                 <Users className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-xl font-semibold mb-2">View Profiles</h3>
-              <p className="text-gray-400">Explore detailed user profiles with repositories</p>
+              <p className="text-muted">Explore detailed user profiles with repositories</p>
             </div>
             <div className="text-center">
-              <div className="bg-purple-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="bg-surface-muted w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 border border-app">
                 <GitBranch className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-xl font-semibold mb-2">Browse Repos</h3>
-              <p className="text-gray-400">Check out projects and contributions</p>
+              <p className="text-muted">Check out projects and contributions</p>
             </div>
           </div>
         </div>
